@@ -15,8 +15,6 @@ class AWSGlueOperations:
         self.client = boto3.client("glue", region_name=aws_region)
         
     def aws_glue_create_job(self, **kwargs):
-        print("vikramhere")
-        print(kwargs)
         template_io = pkg_resources.resource_stream(__name__, "./glue_job_template.json")
         template = json.load(template_io)        
         if 'Name' in kwargs:
@@ -63,7 +61,6 @@ class AWSGlueOperations:
         print("AWSGlueOperations.aws_glue_create_job called...")
         
         try:
-            print(template)
             return self.client.create_job(**template)
         except ClientError as e:
             if e.response.get('Error', {}).get('Code') == 'InvalidInputException':
