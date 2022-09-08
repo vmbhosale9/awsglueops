@@ -22,25 +22,25 @@ def start_glue_job():
     )
     print(json.dumps(response, indent=4, sort_keys=True, default=str))
 
-def create_glue_job():
-    response = client.create_job(
-        Name='IrisJob',
-        Role='awsgluerole',
-        Command={
-            'Name': 'glueetl',
-            'ScriptLocation': 's3://awsglue081222/iris_onboarder.py',
-            'PythonVersion': '3'
-        },
-        DefaultArguments={
-          '--TempDir': 's3://awsglue081222/temp_dir',
-          '--job-bookmark-option': 'job-bookmark-disable'
-        },
-        MaxRetries=1,
-        GlueVersion='3.0',
-        NumberOfWorkers=2,
-        WorkerType='Standard'
-    )
-    print(json.dumps(response, indent=4, sort_keys=True, default=str))
+# def create_glue_job():
+#     response = client.create_job(
+#         Name='IrisJob2',
+#         Role='awsgluerole',
+#         Command={
+#             'Name': 'glueetl',
+#             'ScriptLocation': 's3://awsglue081222/iris_onboarder.py',
+#             'PythonVersion': '3'
+#         },
+#         DefaultArguments={
+#           '--TempDir': 's3://awsglue081222/temp_dir',
+#           '--job-bookmark-option': 'job-bookmark-disable'
+#         },
+#         MaxRetries=1,
+#         GlueVersion='3.0',
+#         NumberOfWorkers=2,
+#         WorkerType='Standard'
+#     )
+#     print(json.dumps(response, indent=4, sort_keys=True, default=str))
 
 def create_crawler():
     response = client.create_crawler(
@@ -118,12 +118,42 @@ def validateJSON(jsonData):
         return False
     return True
 
+def create_job(job_details):
+    AWSGOps = AWSGlueOperations()
+    response = AWSGOps.aws_glue_create_job(**job_details)
+    print(json.dumps(response, indent=4, sort_keys=True, default=str))
+    if response['ResponseMetadata']['HTTPStatusCode'] == 200:
+        return json.dumps(response)
+    else:
+        return "you are in trouble!"
 
 def lambda_handler(event, context):
     responsedata = None
     if event['httpMethod'] == 'POST' and event['path'] == '/list_jobs':
         print("Calling listjobs method!")
         responsedata = list_jobs()
+    elif event['httpMethod']=='POST' and event['path']=='/create_job':
+        # In real-world, job_details will come via a DB query or HTTP parameters or a static file on s3 or ?
+        requestparams = json.loads(event['body'])
+        if bool(requestparams):
+            print("requestparams are: {}".format(requestparams))
+            script_bucket = requestparams['script_bucket']
+            output_script_path = requestparams['output_script_path']
+            temp_dir = requestparams['temp_dir']
+            job_name = requestparams['job_name'] 
+            role = requestparams['role']
+            name = requestparams['name']        
+            job_spec = {
+                'Name' : name,
+                'AllocatedCapacity': 2,
+                'ScriptLocation': 's3://{}/{}'.format(script_bucket, output_script_path),
+                'TempDir': 's3://{}/{}'.format(script_bucket, temp_dir),
+                'MaxRetries': 0,
+                'Name': job_name,
+                'Role': role
+            }            
+            print("Calling create_job method!") 
+            responsedata = create_job(job_spec)
     elif event['httpMethod']=='POST' and event['path']=='/list_crawlers':
         print("Calling listcrawlers method!") 
         responsedata = list_crawlers()
