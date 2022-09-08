@@ -9,12 +9,14 @@ def list_jobs():
         return json.dumps(response)
     else:
         return "you are in trouble!"
-        
-def delete_glue_job():
-    response = client.delete_job(
-        JobName='IrisJob'
-    )
-    print(json.dumps(response, indent=4, sort_keys=True, default=str))    
+
+def delete_glue_job(jobname):
+    AWSGOps = AWSGlueOperations()
+    response = AWSGOps.aws_glue_delete_job(jobname)
+    if response['ResponseMetadata']['HTTPStatusCode'] == 200:
+        return json.dumps(response)
+    else:
+        return "you are in trouble!"
 
 def start_glue_job():
     response = client.start_job_run(
@@ -154,6 +156,13 @@ def lambda_handler(event, context):
             }            
             print("Calling create_job method!") 
             responsedata = create_job(job_spec)
+    elif event['httpMethod']=='POST' and event['path']=='/delete_job':
+        requestparams = json.loads(event['body'])
+        if bool(requestparams):
+            print("requestparams are: {}".format(requestparams))
+            jobname = requestparams['jobname']        
+        print("Calling delete_glue_job method!") 
+        responsedata = delete_glue_job(jobname)            
     elif event['httpMethod']=='POST' and event['path']=='/list_crawlers':
         print("Calling listcrawlers method!") 
         responsedata = list_crawlers()
