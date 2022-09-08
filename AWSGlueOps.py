@@ -100,6 +100,14 @@ class AWSGlueOperations:
         except Exception as e:
           raise Exception( "Unexpected error in aws_glue_list_crawlers: " + e.__str__()) 
 
+    def aws_glue_delete_job(self, jobname):
+       try:
+          return self.client.delete_job(JobName=jobname)
+       except ClientError as e:
+          raise Exception( "boto3 client error in aws_glue_delete_job: " + e.__str__())
+       except Exception as e:
+          raise Exception( "Unexpected error in aws_glue_delete_job: " + e.__str__()) 
+
     def aws_glue_get_jobs(self):
        try:
           jobs = self.client.get_jobs()
