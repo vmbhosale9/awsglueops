@@ -10,6 +10,14 @@ def list_jobs():
     else:
         return "you are in trouble!"
 
+def start_glue_job(jobname):
+    AWSGOps = AWSGlueOperations()
+    response = AWSGOps.aws_glue_start_job(jobname)
+    if response['ResponseMetadata']['HTTPStatusCode'] == 200:
+        return json.dumps(response)
+    else:
+        return "you are in trouble!"
+
 def delete_glue_job(jobname):
     AWSGOps = AWSGlueOperations()
     response = AWSGOps.aws_glue_delete_job(jobname)
@@ -18,11 +26,11 @@ def delete_glue_job(jobname):
     else:
         return "you are in trouble!"
 
-def start_glue_job():
-    response = client.start_job_run(
-        JobName='IrisJob'
-    )
-    print(json.dumps(response, indent=4, sort_keys=True, default=str))
+# def start_glue_job():
+#     response = client.start_job_run(
+#         JobName='IrisJob'
+#     )
+#     print(json.dumps(response, indent=4, sort_keys=True, default=str))
 
 # def create_glue_job():
 #     response = client.create_job(
@@ -140,19 +148,27 @@ def lambda_handler(event, context):
         if bool(requestparams):
             print("requestparams are: {}".format(requestparams))
             script_bucket = requestparams['script_bucket']
+            description = requestparams['description']            
             output_script_path = requestparams['output_script_path']
             temp_dir = requestparams['temp_dir']
             job_name = requestparams['job_name'] 
             role = requestparams['role']
-            name = requestparams['name']        
+            name = requestparams['name']
+            glueversion = requestparams['glueversion']             
+            contact = requestparams['contact']
+            env = requestparams['environment']            
             job_spec = {
-                'Name' : name,
+                'Name': name,
+                "Description": description,
                 'AllocatedCapacity': 2,
                 'ScriptLocation': 's3://{}/{}'.format(script_bucket, output_script_path),
                 'TempDir': 's3://{}/{}'.format(script_bucket, temp_dir),
                 'MaxRetries': 0,
                 'Name': job_name,
-                'Role': role
+                'GlueVersion': glueversion,                
+                'Role': role,
+                'Contact': contact,
+                'Environment': env
             }            
             print("Calling create_job method!") 
             responsedata = create_job(job_spec)
@@ -166,6 +182,13 @@ def lambda_handler(event, context):
     elif event['httpMethod']=='POST' and event['path']=='/list_crawlers':
         print("Calling listcrawlers method!") 
         responsedata = list_crawlers()
+    elif event['httpMethod']=='POST' and event['path']=='/start_job':
+        requestparams = json.loads(event['body'])
+        if bool(requestparams):
+            print("requestparams are: {}".format(requestparams))
+            jobname = requestparams['jobname']           
+        print("Calling start_glue_job method!") 
+        responsedata = start_glue_job(jobname)        
     elif event['httpMethod']=='POST' and event['path']=='/aws_get_glue_jobs':
         print("Calling aws_get_glue_jobs method!") 
         responsedata = aws_get_glue_jobs()
