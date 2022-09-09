@@ -13,9 +13,85 @@ class AWSGlueOperations:
     def __init__(self) -> None:
         print("AWSGlueOperations constructor called...")
         self.client = boto3.client("glue", region_name=aws_region)
+
+    def aws_glue_update_job(self, jobname, **kwargs):
+        template_io = pkg_resources.resource_stream(__name__, "./glue_job_update_template_v1.json")
+        template = json.load(template_io)
+
+        if 'GlueVersion' in kwargs:
+            template["GlueVersion"] = kwargs["GlueVersion"]
+        else :
+            raise ValueError("Your job has to be versioned, using the GlueVersion kwarg")
+    
+        if 'Role' in kwargs:
+            template["Role"] = kwargs["Role"]
+        else :
+            raise ValueError("You must give your job a role, using the Role kwarg")
+    
+        if 'ScriptLocation' in kwargs:
+            template["Command"]["ScriptLocation"] = kwargs["ScriptLocation"]
+        else :
+            raise ValueError("You must assign a ScriptLocation to your job, using the ScriptLocation kwarg")
+
+        if 'Description' in kwargs:
+            template["Description"] = kwargs["Description"]
+        else :
+            raise ValueError("You must assign a Description to your job, using the Description kwarg")
+    
+        if 'TempDir' in kwargs:
+            template["DefaultArguments"]["--TempDir"] = kwargs["TempDir"]
+        else :
+            raise ValueError("You must give your job a temporary directory to work in, using the TempDir kwarg")
+    
+        if 'extra-files' in kwargs:
+            template["DefaultArguments"]["--extra-files"] = kwargs["extra-files"]
+        else :
+            template["DefaultArguments"].pop("--extra-files", None)
+    
+        if 'extra-py-files' in kwargs:
+            template["DefaultArguments"]["--extra-py-files"] = kwargs["extra-py-files"]
+        else :
+            template["DefaultArguments"].pop("--extra-py-files", None)
+    
+        if 'MaxConcurrentRuns' in kwargs:
+            template["ExecututionProperty"]["MaxConcurrentRuns"] = kwargs["MaxConcurrentRuns"]
+    
+        if 'MaxRetries' in kwargs:
+            template["MaxRetries"] = kwargs["MaxRetries"]
+    
+        if 'AllocatedCapacity' in kwargs:
+            template["AllocatedCapacity"] = kwargs["AllocatedCapacity"]
+        else:
+            template["AllocatedCapacity"] = 2  
+            
+        print("AWSGlueOperations.aws_glue_update_job called...")
+        
+        try:
+            return self.client.update_job(JobName=jobname, JobUpdate=template)
+        except ClientError as e:
+            if e.response.get('Error', {}).get('Code') == 'InvalidInputException':
+                print("update_glue_job - InvalidInputException")
+            elif e.response.get('Error', {}).get('Code') == 'IdempotentParameterMismatchException':
+                print("update_glue_job - IdempotentParameterMismatchException")
+            elif e.response.get('Error', {}).get('Code') == 'ValidationException':
+                print("update_glue_job - ValidationException")                
+            elif e.response.get('Error', {}).get('Code') == 'AlreadyExistsException':
+                print("update_glue_job - AlreadyExistsException")
+            elif e.response.get('Error', {}).get('Code') == 'InternalServiceException':
+                print("update_glue_job - InternalServiceException")
+            elif e.response.get('Error', {}).get('Code') == 'OperationTimeoutException':
+                print("update_glue_job - OperationTimeoutException")                
+            elif e.response.get('Error', {}).get('Code') == 'ResourceNumberLimitExceededException':
+                print("update_glue_job - ResourceNumberLimitExceededException") 
+            elif e.response.get('Error', {}).get('Code') == 'ConcurrentModificationException':
+                print("update_glue_job - ConcurrentModificationException")                 
+            else:
+                print("update_glue_job - Something out of the world may have happened!")
+        except Exception as e:
+          raise Exception( "Unexpected error in update_glue_job: " + e.__str__())
         
     def aws_glue_create_job(self, **kwargs):
-        template_io = pkg_resources.resource_stream(__name__, "./glue_job_template.json")
+        template_io = pkg_resources.resource_stream(__name__, "./glue_job_create_template_v1.json")
         template = json.load(template_io)        
         if 'Name' in kwargs:
             template["Name"] = kwargs['Name']
