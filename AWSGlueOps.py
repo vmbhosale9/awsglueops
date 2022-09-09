@@ -21,6 +21,11 @@ class AWSGlueOperations:
             template["Name"] = kwargs['Name']
         else :
             raise ValueError("You must give your job a name, using the Name kwarg")
+
+        if 'GlueVersion' in kwargs:
+            template["GlueVersion"] = kwargs["GlueVersion"]
+        else :
+            raise ValueError("Your job has to be versioned, using the GlueVersion kwarg")
     
         if 'Role' in kwargs:
             template["Role"] = kwargs["Role"]
@@ -31,6 +36,21 @@ class AWSGlueOperations:
             template["Command"]["ScriptLocation"] = kwargs["ScriptLocation"]
         else :
             raise ValueError("You must assign a ScriptLocation to your job, using the ScriptLocation kwarg")
+
+        if 'Description' in kwargs:
+            template["Description"] = kwargs["Description"]
+        else :
+            raise ValueError("You must assign a Description to your job, using the Description kwarg")
+
+        if 'Contact' in kwargs:
+            template["Tags"]["Contact"] = kwargs["Contact"]
+        else :
+            raise ValueError("You must assign a contact, using the contact kwarg")
+            
+        if 'Environment' in kwargs:
+            template["Tags"]["Environment"] = kwargs["Environment"]
+        else :
+            raise ValueError("You must assign a environment, using the environment kwarg")            
     
         if 'TempDir' in kwargs:
             template["DefaultArguments"]["--TempDir"] = kwargs["TempDir"]
@@ -61,12 +81,15 @@ class AWSGlueOperations:
         print("AWSGlueOperations.aws_glue_create_job called...")
         
         try:
+            print(template)
             return self.client.create_job(**template)
         except ClientError as e:
             if e.response.get('Error', {}).get('Code') == 'InvalidInputException':
                 print("create_glue_job - InvalidInputException")
             elif e.response.get('Error', {}).get('Code') == 'IdempotentParameterMismatchException':
                 print("create_glue_job - IdempotentParameterMismatchException")
+            elif e.response.get('Error', {}).get('Code') == 'ValidationException':
+                print("create_glue_job - ValidationException")                
             elif e.response.get('Error', {}).get('Code') == 'AlreadyExistsException':
                 print("create_glue_job - AlreadyExistsException")
             elif e.response.get('Error', {}).get('Code') == 'InternalServiceException':
@@ -90,6 +113,16 @@ class AWSGlueOperations:
           raise Exception( "boto3 client error in aws_glue_list_jobs: " + e.__str__())
         except Exception as e:
           raise Exception( "Unexpected error in aws_glue_list_jobs: " + e.__str__()) 
+
+    def aws_glue_start_job(self, jobname):
+        print("AWSGlueOperations.aws_glue_start_job called...")
+        try:
+            # return self.client.list_crawlers()
+            return self.client.start_job_run(JobName=jobname)
+        except ClientError as e:
+          raise Exception( "boto3 client error in aws_glue_start_job: " + e.__str__())
+        except Exception as e:
+          raise Exception( "Unexpected error in aws_glue_start_job: " + e.__str__()) 
         
     def aws_glue_list_crawlers(self):
         print("AWSGlueOperations.aws_glue_list_crawlers called...")
