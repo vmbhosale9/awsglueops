@@ -1,5 +1,6 @@
 {
     "Name": "",
+    "Description": "",
     "Role": "",
     "ExecutionProperty": {
         "MaxConcurrentRuns": 1
@@ -14,6 +15,11 @@
         "--extra-py-files": "",
         "--job-bookmark-option": "job-bookmark-enable"
     },
-    "MaxRetries": 0,
-    "AllocatedCapacity": 2
+    "MaxRetries": 1,
+    "AllocatedCapacity": 2,
+    "Tags": {
+        "Contact": "",
+        "Environment": ""
+    },
+    "GlueVersion": ""
 }
