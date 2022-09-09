@@ -137,6 +137,15 @@ def create_job(job_details):
     else:
         return "you are in trouble!"
 
+def update_job(job_name, job_details):
+    AWSGOps = AWSGlueOperations()
+    response = AWSGOps.aws_glue_update_job(job_name, **job_details)
+    print(json.dumps(response, indent=4, sort_keys=True, default=str))
+    if response['ResponseMetadata']['HTTPStatusCode'] == 200:
+        return json.dumps(response)
+    else:
+        return "you are in trouble!"        
+
 def lambda_handler(event, context):
     responsedata = None
     if event['httpMethod'] == 'POST' and event['path'] == '/list_jobs':
@@ -172,6 +181,35 @@ def lambda_handler(event, context):
             }            
             print("Calling create_job method!") 
             responsedata = create_job(job_spec)
+    elif event['httpMethod']=='POST' and event['path']=='/update_job':
+        # In real-world, job_details will come via a DB query or HTTP parameters or a static file on s3 or ?
+        requestparams = json.loads(event['body'])
+        if bool(requestparams):
+            print("requestparams are: {}".format(requestparams))
+            script_bucket = requestparams['script_bucket']
+            description = requestparams['description']            
+            output_script_path = requestparams['output_script_path']
+            temp_dir = requestparams['temp_dir']
+            job_name = requestparams['job_name'] 
+            role = requestparams['role']
+            name = requestparams['name']
+            glueversion = requestparams['glueversion']             
+            contact = requestparams['contact']
+            env = requestparams['environment']            
+            job_spec = {
+                "Description": description,
+                'AllocatedCapacity': 2,
+                'ScriptLocation': 's3://{}/{}'.format(script_bucket, output_script_path),
+                'TempDir': 's3://{}/{}'.format(script_bucket, temp_dir),
+                'MaxRetries': 0,
+                'Name': job_name,
+                'GlueVersion': glueversion,                
+                'Role': role,
+                'Contact': contact,
+                'Environment': env
+            }            
+            print("Calling create_job method!") 
+            responsedata = update_job(job_name, job_spec)            
     elif event['httpMethod']=='POST' and event['path']=='/delete_job':
         requestparams = json.loads(event['body'])
         if bool(requestparams):
